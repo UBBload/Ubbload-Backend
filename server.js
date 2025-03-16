@@ -11,7 +11,7 @@ const allowedOrigins = [
   'https://scratch-image-hoster.netlify.app', 
   'https://ubbload.netlify.app',    
   'https://krxzykrxzy.github.io/Image-Hoster',    
-  'https://another-url.com' 
+  'https://ubbload.github.io' 
 ];
 
 // Set up CORS middleware to allow specific origins
