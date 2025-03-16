@@ -13,7 +13,7 @@ const USERS_FILE = 'users.json'; // Where we store the verified users
 const ALLOWED_ORIGINS = [
   'https://scratch-image-hoster.netlify.app',
   'https://ubbload.netlify.app',
-  'https://krxzykrxzy.github.io/Image-Hoster'
+  'https://ubbload.github.io'
 ];
 
 app.use(cors({
