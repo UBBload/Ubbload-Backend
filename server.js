@@ -34,28 +34,52 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // Ensure uploads folder exists
-const uploadsDir = 'uploads';
+const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
 
-// Set up multer storage for video uploads
+// Multer storage with user-specific directories
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadsDir),
+  destination: (req, file, cb) => {
+    const verifiedUser = req.headers['verifieduser'];
+    if (!verifiedUser) {
+      return cb(new Error('No verified user provided'), null);
+    }
+
+    const userDir = path.join(uploadsDir, verifiedUser);
+    if (!fs.existsSync(userDir)) {
+      fs.mkdirSync(userDir, { recursive: true });
+    }
+
+    cb(null, userDir);
+  },
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
 
 const upload = multer({ storage });
 
-// Serve uploaded videos
-app.use('/uploads', express.static('uploads'));
+// Serve videos dynamically
+app.use('/:verifiedUser/uploads', (req, res, next) => {
+  const { verifiedUser } = req.params;
+  const videoPath = path.join(uploadsDir, verifiedUser);
+
+  if (!fs.existsSync(videoPath)) {
+    return res.status(404).send('User directory not found');
+  }
+
+  express.static(videoPath)(req, res, next);
+});
 
 // Video upload route
 app.post('/upload', upload.single('video'), (req, res) => {
   if (!req.file) return res.status(400).send('No file uploaded.');
 
+  const verifiedUser = req.headers['verifieduser'];
+  if (!verifiedUser) return res.status(400).send('No verified user provided.');
+
   console.log('Uploaded file:', req.file);
-  res.json({ filePath: `/uploads/${req.file.filename}` });
+  res.json({ filePath: `/${verifiedUser}/uploads/${req.file.filename}` });
 });
 
 // Start the server
