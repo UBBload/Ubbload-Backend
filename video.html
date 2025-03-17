@@ -11,20 +11,16 @@
             background-color: #f4f4f9;
             padding: 20px;
         }
-
         .container {
             max-width: 800px;
             margin: 0 auto;
         }
-
         form {
             margin-bottom: 20px;
         }
-
         input[type="file"] {
             padding: 10px;
         }
-
         button {
             padding: 10px 20px;
             font-size: 16px;
@@ -34,21 +30,18 @@
             border: none;
             border-radius: 5px;
         }
-
         button:hover {
             background-color: #0056b3;
         }
-
         #videoContainer {
             margin-top: 30px;
+            display: none;
         }
-
         #videoPlayer {
             width: 100%;
             max-width: 600px;
             margin-top: 20px;
         }
-
         #message {
             margin-top: 20px;
             font-size: 16px;
@@ -56,48 +49,56 @@
     </style>
 </head>
 <body>
-<center>    <div class="container">
-        <h1>Ubbload and Watch Video</h1>
+    <center>
+        <div class="container">
+            <h1>Ubbload and Watch Videos</h1>
 
-        <!-- Form to upload video -->
-        <form id="uploadForm" enctype="multipart/form-data">
-            <input type="file" name="video" accept="video/*" required />
-            <button type="submit">Upload Video</button>
-        </form>
+            <!-- Form to upload video -->
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" name="video" accept="video/*" required />
+                <button type="submit">Upload Video</button>
+            </form>
 
-        <!-- Video container -->
-        <div id="videoContainer" style="display: none;">
-            <h2>Video Playback:</h2>
-            <video id="videoPlayer" controls>
-                Your browser does not support the video tag.
-            </video>
+            <!-- Video container -->
+            <div id="videoContainer">
+                <h2>Video Playback:</h2>
+                <video id="videoPlayer" controls>
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+
+            <p id="message"></p>
         </div>
+    </center>
 
-        <p id="message"></p>
-    </div>
-</center>
     <script>
-        if (!localStorage.setItem('verifiedUser) {
-            window.location.href = 'login';
+        // Redirect to login if 'verifiedUser' is not set
+        const verifiedUser = localStorage.getItem('verifiedUser');
+        if (!verifiedUser) {
+            window.location.href = 'login.html';
         }
+
         document.getElementById('uploadForm').addEventListener('submit', function (e) {
-            e.preventDefault();  // Prevent form submission
+            e.preventDefault(); // Prevent form submission
 
             const formData = new FormData();
             const videoFile = document.querySelector('input[type="file"]').files[0];
             formData.append('video', videoFile);
 
-            // Send the video file to the backend
-            fetch('https://video-hoster.onrender.com/upload', {  // Use the correct backend URL
+            // Send the video file to the backend with 'verifiedUser' header
+            fetch('https://video-hoster.onrender.com/upload', { // Use the correct backend URL
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: { 'verifiedUser': verifiedUser }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.filePath) {
                     document.getElementById('message').textContent = 'Video uploaded successfully!';
                     document.getElementById('videoContainer').style.display = 'block';
-                    document.getElementById('videoPlayer').src = data.filePath;  // Show uploaded video
+
+                    // Set video source
+                    document.getElementById('videoPlayer').src = data.filePath;
                 }
             })
             .catch(error => {
