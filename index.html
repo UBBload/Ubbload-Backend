@@ -22,6 +22,8 @@
       border-radius: 10px;
       box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
       background: #ffffff;
+      width: 85vw; /* Makes the container fit within 85vw */
+      max-width: 600px; /* Prevents it from becoming too wide on large screens */
     }
     h1 {
       font-size: 2.5em;
@@ -37,8 +39,9 @@
       display: flex;
       justify-content: center;
       gap: 20px;
+      flex-wrap: wrap; /* Ensures buttons wrap if screen is too small */
     }
-    .btn {
+    .btn, .btn2 {
       padding: 15px 30px;
       background: #007bff;
       color: white;
@@ -49,49 +52,34 @@
       transition: background-color 0.3s ease;
       text-decoration: none;
     }
-    .btn:hover {
+    .btn:hover, .btn2:hover {
       background-color: #0056b3;
     }
-    .btn:active {
-      background-color: #004085;
-    }
-
-        .btn2 {
-      padding: 15px 30px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 1.1em;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      text-decoration: none;
-    }
-    .btn2:hover {
-      background-color: #0056b3;
-    }
-    .btn2:active {
+    .btn:active, .btn2:active {
       background-color: #004085;
     }
   </style>
 </head>
 <body>
 
- <center> <div class="container">
+  <div class="container">
     <h1>Welcome to Ubbload</h1>
-    <p>Upload and share anything with out platform!</p>
+    <p>Upload and share anything with our platform!</p>
     
     <div class="button-container">
-      <a href="login" class="btn2">Login</a>
+      <a href="login" id="btn2" class="btn2">Login</a>
       <a href="upload" class="btn">Image Hosting</a>
-          <a href="video" class="btn">Video Hosting</a>
-      <a href="Web" class="btn">Web Hosting</a>
+      <a href="video" class="btn">Video Hosting</a>
+      <a href="web" class="btn">Web Hosting</a>
     </div>
   </div>
- </center>
-  <script>const loggedIn = localStorage.getItem('verifiedUser')
-  if (loggedIn) {
-    document.getElementById("bt2").style.display="none"
-  }</script>
+
+  <script>
+    // Check if user is logged in and hide login button if true
+    const loggedIn = localStorage.getItem('verifiedUser');
+    if (loggedIn) {
+      document.getElementById("btn2").style.display = "none";
+    }
+  </script>
 </body>
 </html>
