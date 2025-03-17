@@ -1,12 +1,13 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');  // Add fs to check folder existence
-const cors = require('cors');  // Import the cors package
-const app = express();
-const port = 3000;
+const fs = require('fs');
+const cors = require('cors');
 
-// Define allowed front-end URLs (you can modify these)
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Allowed front-end URLs
 const allowedOrigins = [
   'https://scratch-image-hoster.netlify.app', 
   'https://ubbload.netlify.app',    
@@ -14,20 +15,23 @@ const allowedOrigins = [
   'https://ubbload.github.io' 
 ];
 
-// Set up CORS middleware to allow specific origins
+// Set up CORS middleware
 const corsOptions = {
   origin: function (origin, callback) {
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);  // Allow the request if the origin is in the allowed list or if no origin is provided (for local requests)
+    console.log("Request Origin:", origin);
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));  // Reject the request if the origin is not in the allowed list
+      console.log("Blocked by CORS:", origin);
+      callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST'], // Allow specific HTTP methods 
+  credentials: true,
+  methods: ['GET', 'POST'],
 };
 
-// Enable CORS with the options
 app.use(cors(corsOptions));
+app.use(express.json());
 
 // Ensure uploads folder exists
 const uploadsDir = 'uploads';
@@ -37,27 +41,21 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Set up multer storage for video uploads
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);  // Directory to store uploaded videos
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));  // Name the file with a timestamp
-  }
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
-// Serve static files from the root directory and the uploads folder
-app.use(express.static(__dirname));  // Serve everything from the root folder, including index.html
-app.use('/uploads', express.static('uploads'));  // Serve uploaded videos
+// Serve uploaded videos
+app.use('/uploads', express.static('uploads'));
 
-// Route to handle video file upload
+// Video upload route
 app.post('/upload', upload.single('video'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).send('No file uploaded.');
-  }
-  console.log('Uploaded file:', req.file);  // Log the uploaded file details
-  res.json({ filePath: `/uploads/${req.file.filename}` });  // Return the file path for the uploaded video
+  if (!req.file) return res.status(400).send('No file uploaded.');
+
+  console.log('Uploaded file:', req.file);
+  res.json({ filePath: `/uploads/${req.file.filename}` });
 });
 
 // Start the server
