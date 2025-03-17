@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ubbload and Play Video</title>
+    <title>Ubbload and Get Video Link</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -33,14 +33,13 @@
         button:hover {
             background-color: #0056b3;
         }
-        #videoContainer {
+        #videoLinkContainer {
             margin-top: 30px;
             display: none;
         }
-        #videoPlayer {
-            width: 100%;
-            max-width: 600px;
-            margin-top: 20px;
+        #videoLink {
+            font-size: 16px;
+            word-break: break-all;
         }
         #message {
             margin-top: 20px;
@@ -51,7 +50,7 @@
 <body>
     <center>
         <div class="container">
-            <h1>Ubbload and Watch Videos</h1>
+            <h1>Ubbload and Get Video Link</h1>
 
             <!-- Form to upload video -->
             <form id="uploadForm" enctype="multipart/form-data">
@@ -59,12 +58,10 @@
                 <button type="submit">Upload Video</button>
             </form>
 
-            <!-- Video container -->
-            <div id="videoContainer">
-                <h2>Video Playback:</h2>
-                <video id="videoPlayer" controls>
-                    Your browser does not support the video tag.
-                </video>
+            <!-- Video Link Container -->
+            <div id="videoLinkContainer">
+                <h2>Video Link:</h2>
+                <a id="videoLink" href="#" target="_blank"></a>
             </div>
 
             <p id="message"></p>
@@ -95,10 +92,12 @@
             .then(data => {
                 if (data.filePath) {
                     document.getElementById('message').textContent = 'Video uploaded successfully!';
-                    document.getElementById('videoContainer').style.display = 'block';
+                    document.getElementById('videoLinkContainer').style.display = 'block';
 
-                    // Set video source
-                    document.getElementById('videoPlayer').src = data.filePath;
+                    // Set video link
+                    const videoLink = document.getElementById('videoLink');
+                    videoLink.href = data.filePath;
+                    videoLink.textContent = data.filePath;
                 }
             })
             .catch(error => {
