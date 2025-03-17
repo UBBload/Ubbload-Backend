@@ -9,7 +9,7 @@
     .container { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); text-align: center; width: 350px; }
     input, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
     button { background: #007bff; color: white; border: none; cursor: pointer; }
-    .code-container { display: flex; align-items: center; gap: 10px; }
+    .code-container { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
     .code-box { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background: #f4f4f4; text-align: center; font-size: 16px; }
     .copy-btn { width: auto; padding: 10px; background: #28a745; color: white; border: none; cursor: pointer; }
   </style>
@@ -40,18 +40,23 @@
       let username = document.getElementById('username').value.trim().toLowerCase();
       if (!username) return alert('Enter your Scratch username.');
 
-      const response = await fetch(`${serverUrl}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username })
-      });
+      try {
+        const response = await fetch(`${serverUrl}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
 
-      const result = await response.json();
-      if (result.code) {
-        document.getElementById('codeBox').value = result.code;
-        document.getElementById('codeContainer').style.display = 'flex';
-      } else {
-        alert(result.message || 'Failed to get code.');
+        const result = await response.json();
+        
+        if (result.code) {
+          document.getElementById('codeBox').value = result.code;
+          document.getElementById('codeContainer').style.display = 'flex'; // Make code container visible
+        } else {
+          alert(result.message || 'Failed to get code.');
+        }
+      } catch (error) {
+        alert('Error connecting to the server.');
       }
     }
 
@@ -67,18 +72,22 @@
       let username = document.getElementById('username').value.trim().toLowerCase();
       if (!username) return alert('Enter your username first.');
 
-      const response = await fetch(`${serverUrl}/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username })
-      });
+      try {
+        const response = await fetch(`${serverUrl}/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
 
-      const result = await response.json();
-      if (result.verified) {
-        localStorage.setItem('verifiedUser', username);
-        window.location.href = 'index.html';
-      } else {
-        alert(result.message || 'Verification failed.');
+        const result = await response.json();
+        if (result.verified) {
+          localStorage.setItem('verifiedUser', username);
+          window.location.href = 'index.html';
+        } else {
+          alert(result.message || 'Verification failed.');
+        }
+      } catch (error) {
+        alert('Error verifying code.');
       }
     }
   </script>
