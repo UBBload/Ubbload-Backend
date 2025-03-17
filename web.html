@@ -1,137 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Deploy to Ubbload</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-    .btn { padding: 10px 15px; margin: 10px; border-radius: 5px; text-decoration: none; color: white; display: inline-block; margin: 5px; }
-    .github { background-color: #333; }
-    .repo-list { margin-top: 20px; }
-    .hidden { display: none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Website Creator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        #result {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-  <h1>Deploy to Netlify</h1>
-  
-  <!-- Login Button -->
-  <a class="btn github" id="github-login">Login with GitHub</a>
+    <h1>Create Your Website from GitHub Repo</h1>
+    <form id="repoForm">
+        <label for="repoUrl">Enter GitHub Repository URL:</label><br>
+        <input type="text" id="repoUrl" name="repoUrl" required>
+        <button type="submit">Create Website</button>
+    </form>
 
-  <!-- Repositories List -->
-  <div id="repos" class="repo-list hidden">
-    <h2>Select a Repository:</h2>
-    <select id="repo-select"></select>
-    <button onclick="selectRepo()">Next</button>
-  </div>
+    <div id="result"></div>
 
-  <!-- Netlify Setup -->
-  <div id="netlify-setup" class="hidden">
-    <h2>Netlify Site Setup</h2>
-    <input type="text" id="site-name" placeholder="Site Name">
-    <button onclick="checkSite()">Check Availability</button>
-    <p id="site-status"></p>
-    <input type="text" id="build-cmd" placeholder="Build Command (e.g., npm run build)">
-    <input type="text" id="start-cmd" placeholder="Start Command (e.g., npm start)">
-    <button onclick="deploySite()">Deploy</button>
-  </div>
+    <script>
+        const form = document.getElementById('repoForm');
+        const resultDiv = document.getElementById('result');
 
-  <script>
-    const GITHUB_CLIENT_ID = "Ov23liDtYx7bM6q4tUbZ";
-    const NETLIFY_TOKEN = "nfp_RgF1VHcGH5SpWgkfCskykvPHAWxZqKH2e45a"; // Generate from Netlify
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const repoUrl = document.getElementById('repoUrl').value;
 
-    document.getElementById("github-login").href = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&scope=repo`;
+            resultDiv.innerHTML = 'Processing...';
 
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
+            try {
+                const response = await fetch('/create-site', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ repoUrl }),
+                });
 
-    window.onload = () => {
-      const githubCode = getQueryParam("code");
-      if (githubCode) {
-        fetch("https://github.com/login/oauth/access_token", {
-          method: "POST",
-          headers: { "Accept": "application/json" },
-          body: JSON.stringify({
-            client_id: GITHUB_CLIENT_ID,
-            client_secret: "754275f7ad53c9090c38b20f93dbdbaca224470f",
-            code: githubCode
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
-          localStorage.setItem("github_token", data.access_token);
-          fetchRepos();
-        });
-      }
-    };
-
-    function fetchRepos() {
-      const token = localStorage.getItem("github_token");
-      if (!token) return;
-
-      fetch("https://api.github.com/user/repos", {
-        headers: { Authorization: `token ${token}` }
-      })
-      .then(res => res.json())
-      .then(repos => {
-        const select = document.getElementById("repo-select");
-        select.innerHTML = repos.map(repo => `<option value="${repo.clone_url}">${repo.name}</option>`).join("");
-        document.getElementById("repos").classList.remove("hidden");
-      });
-    }
-
-    function selectRepo() {
-      document.getElementById("repos").classList.add("hidden");
-      document.getElementById("netlify-setup").classList.remove("hidden");
-    }
-
-    function checkSite() {
-      const siteName = document.getElementById("site-name").value;
-      fetch(`https://api.netlify.com/api/v1/sites/${siteName}`, {
-        method: "HEAD"
-      })
-      .then(response => {
-        if (response.status === 404) {
-          document.getElementById("site-status").innerText = "✅ Available!";
-        } else {
-          document.getElementById("site-status").innerText = "❌ Already taken.";
-        }
-      });
-    }
-
-    function deploySite() {
-      const siteName = document.getElementById("site-name").value;
-      const buildCmd = document.getElementById("build-cmd").value;
-      const startCmd = document.getElementById("start-cmd").value;
-      const repo = document.getElementById("repo-select").value;
-
-      fetch("https://api.netlify.com/api/v1/sites", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${NETLIFY_TOKEN}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          name: siteName,
-          repo: {
-            url: repo,
-            deploy_key_id: null,
-            cmd: buildCmd,
-            dir: "/",
-            env: {
-              START_CMD: startCmd
+                const data = await response.json();
+                if (response.ok) {
+                    resultDiv.innerHTML = `Website created successfully! <br> <a href="${data.siteUrl}" target="_blank">Visit your site</a>`;
+                } else {
+                    resultDiv.innerHTML = `Error: ${data.message}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = 'An error occurred while creating the website.';
+                console.error(error);
             }
-          }
-        })
-      })
-      .then(res => res.json())
-      .then(data => alert("Site Created: " + data.url));
-    }
-
-    if (!localStorage.getItem('verifiedUser')) {
-      window.location.href = 'login';
+        });
+      if (!localStorage.getItem('verifiedUser') {
+        window.location.href = 'login';
       }
-  </script>
+    </script>
 </body>
 </html>
