@@ -61,7 +61,7 @@
             <!-- Video Link Container -->
             <div id="videoLinkContainer">
                 <h2>Video Link:</h2>
-                <a id="videoLink" href="#"></a>
+                <a id="videoLink" href="#">View Video</a>
             </div>
 
             <p id="message"></p>
@@ -97,7 +97,6 @@
                     // Set video link
                     const videoLink = document.getElementById('videoLink');
                     videoLink.href = `https://video-hoster.onrender.com/${data.filePath}`;
-                    videoLink.textContent = data.filePath;
                 }
             })
             .catch(error => {
