@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ubbload and Get Video Link</title>
+    <title>Ubbload Videos</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -61,7 +61,7 @@
             <!-- Video Link Container -->
             <div id="videoLinkContainer">
                 <h2>Video Link:</h2>
-                <a id="videoLink" href="#" target="_blank"></a>
+                <a id="videoLink" href="#"></a>
             </div>
 
             <p id="message"></p>
@@ -96,7 +96,7 @@
 
                     // Set video link
                     const videoLink = document.getElementById('videoLink');
-                    videoLink.href = data.filePath;
+                    videoLink.href = 'https://video-hoster.onrender.com/${data.filePath}';
                     videoLink.textContent = data.filePath;
                 }
             })
