@@ -21,6 +21,18 @@
   </div>
 
   <script>
+    // Function to get the URL parameter by name
+function getUrlParameter(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+// Get the 'redirect' parameter
+const redirectUrl = getUrlParameter('redirect');
+
+// If the 'redirect' parameter exists, decode it and redirect
+
+
     const serverUrl = 'https://image-hoster.onrender.com';
 
     if (localStorage.getItem('verifiedUser')) {
@@ -40,7 +52,11 @@
       const result = await response.json();
       if (result.verified) {
         localStorage.setItem('verifiedUser', username);
-        window.location.href = 'upload.html';
+        window.location.href = 'index.html';
+        if (redirectUrl) {
+          const decodedRedirectUrl = decodeURIComponent(redirectUrl);
+          window.location.href = decodedRedirectUrl;
+        }
       } else {
         document.getElementById('codeMessage').textContent = result.message;
       }
@@ -60,6 +76,10 @@
       if (result.verified) {
         localStorage.setItem('verifiedUser', username);
         window.location.href = 'index.html';
+        if (redirectUrl) {
+          const decodedRedirectUrl = decodeURIComponent(redirectUrl);
+          window.location.href = decodedRedirectUrl;
+        }
       } else {
         alert(result.message || 'Verification failed.');
       }
