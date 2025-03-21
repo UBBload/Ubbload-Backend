@@ -25,6 +25,9 @@
 function getUrlParameter(name) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(name);
+    if(urlParams) {
+      localStorage.clear()
+    }
 }
 
 // Get the 'redirect' parameter
