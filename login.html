@@ -21,7 +21,9 @@
   </div>
 
   <script>
-   window.onload = localStorage.clear();
+    if(localStorage.getItem('verifiedUser')) {
+      window.location.href = `${getUrlParameter('redirect')}?username=${localStorage.getItem('verifiedUser')}`;
+    }
     // Function to get the URL parameter by name
 function getUrlParameter(name) {
     const urlParams = new URLSearchParams(window.location.search);
