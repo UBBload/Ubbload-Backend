@@ -59,7 +59,7 @@
       const result = await response.json();
       if (result.verified) {
         localStorage.setItem('verifiedUser', username);
-        window.location.href = 'upload.html';
+        window.location.href = 'index.html';
       } else {
         alert(result.message || 'Verification failed.');
       }
