@@ -21,28 +21,24 @@
   </div>
 
   <script>
-    if(localStorage.getItem('verifiedUser')) {
-      window.location.href = `${getUrlParameter('redirect')}?username=${localStorage.getItem('verifiedUser')}`;
-    }
     // Function to get the URL parameter by name
-function getUrlParameter(name) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(name);
-    if(urlParams) {
-      localStorage.clear();
+    function getUrlParameter(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
     }
-}
 
-// Get the 'redirect' parameter
-const redirectUrl = getUrlParameter('redirect');
-
-// If the 'redirect' parameter exists, decode it and redirect
-
-
+    const redirectUrl = getUrlParameter('redirect');
     const serverUrl = 'https://image-hoster.onrender.com';
 
+    // Check if the user is already verified
     if (localStorage.getItem('verifiedUser')) {
-      window.location.href = 'index';
+      const username = localStorage.getItem('verifiedUser');
+      if (redirectUrl) {
+        const decodedRedirectUrl = decodeURIComponent(redirectUrl);
+        window.location.href = `${decodedRedirectUrl}?username=${username}`;
+      } else {
+        window.location.href = 'index.html';
+      }
     }
 
     async function login() {
@@ -57,13 +53,13 @@ const redirectUrl = getUrlParameter('redirect');
 
       const result = await response.json();
       if (result.verified) {
-        if (redirectUrl) {
-        const decodedRedirectUrl = decodeURIComponent(redirectUrl);
-        window.location.href = decodedRedirectUrl;
-        }
         localStorage.setItem('verifiedUser', username);
-        window.location.href = 'index.html';
-
+        if (redirectUrl) {
+          const decodedRedirectUrl = decodeURIComponent(redirectUrl);
+          window.location.href = `${decodedRedirectUrl}?username=${username}`;
+        } else {
+          window.location.href = 'index.html';
+        }
       } else {
         document.getElementById('codeMessage').textContent = result.message;
       }
@@ -81,13 +77,13 @@ const redirectUrl = getUrlParameter('redirect');
 
       const result = await response.json();
       if (result.verified) {
+        localStorage.setItem('verifiedUser', username);
         if (redirectUrl) {
           const decodedRedirectUrl = decodeURIComponent(redirectUrl);
-          window.location.href = `${decodedRedirectUrl}?username=${localStorage.getItem('verifiedUser')}`;
+          window.location.href = `${decodedRedirectUrl}?username=${username}`;
+        } else {
+          window.location.href = 'index.html';
         }
-        localStorage.setItem('verifiedUser', username);
-        window.location.href = 'index.html';
-        
       } else {
         alert(result.message || 'Verification failed.');
       }
