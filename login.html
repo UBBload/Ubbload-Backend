@@ -54,12 +54,13 @@ const redirectUrl = getUrlParameter('redirect');
 
       const result = await response.json();
       if (result.verified) {
+        if (redirectUrl) {
+        const decodedRedirectUrl = decodeURIComponent(redirectUrl);
+        window.location.href = decodedRedirectUrl;
+        }
         localStorage.setItem('verifiedUser', username);
         window.location.href = 'index.html';
-        if (redirectUrl) {
-          const decodedRedirectUrl = decodeURIComponent(redirectUrl);
-          window.location.href = decodedRedirectUrl;
-        }
+
       } else {
         document.getElementById('codeMessage').textContent = result.message;
       }
@@ -77,12 +78,13 @@ const redirectUrl = getUrlParameter('redirect');
 
       const result = await response.json();
       if (result.verified) {
-        localStorage.setItem('verifiedUser', username);
-        window.location.href = 'index.html';
         if (redirectUrl) {
           const decodedRedirectUrl = decodeURIComponent(redirectUrl);
           window.location.href = `${decodedRedirectUrl}?username=${localStorage.getItem('verifiedUser')}`;
         }
+        localStorage.setItem('verifiedUser', username);
+        window.location.href = 'index.html';
+        
       } else {
         alert(result.message || 'Verification failed.');
       }
