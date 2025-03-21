@@ -78,7 +78,7 @@ const redirectUrl = getUrlParameter('redirect');
         window.location.href = 'index.html';
         if (redirectUrl) {
           const decodedRedirectUrl = decodeURIComponent(redirectUrl);
-          window.location.href = decodedRedirectUrl;
+          window.location.href = `${decodedRedirectUrl}?username=${localStorage.getItem('verifiedUser')}`;
         }
       } else {
         alert(result.message || 'Verification failed.');
