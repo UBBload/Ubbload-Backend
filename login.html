@@ -87,6 +87,7 @@
       }
 
       const usernameHash = await generateSHA256Hash(username);
+      localStorage.setItem('verifiedUser', username);
 
       if (redirectUrl) {
         const decodedRedirectUrl = decodeURIComponent(redirectUrl);
@@ -124,20 +125,18 @@
       let username = document.getElementById('username').value.trim().toLowerCase();
       if (!username) return alert('Enter your username first.');
 
-      const usernameHash = await generateSHA256Hash(username);
-
       const response = await fetch(`${serverUrl}/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usernameHash })
+        body: JSON.stringify({ username })
       });
 
       const result = await response.json();
       if (result.verified) {
-        localStorage.setItem('verifiedUser', usernameHash);
+        localStorage.setItem('verifiedUser', username);
         if (redirectUrl) {
           const decodedRedirectUrl = decodeURIComponent(redirectUrl);
-          window.location.href = `${decodedRedirectUrl}?username=${usernameHash}`;
+          window.location.href = `${decodedRedirectUrl}?username=${username}`;
         } else {
           window.location.href = 'index.html';
         }
