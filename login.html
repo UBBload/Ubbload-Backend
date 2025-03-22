@@ -59,7 +59,7 @@
     }
 
     const redirectUrl = getUrlParameter('redirect');
-    const serverUrl = 'https://image-hoster.onrender.com';
+    const secretCode = '972';
 
     if (localStorage.getItem('verifiedUser')) {
       const username = localStorage.getItem('verifiedUser');
@@ -71,12 +71,28 @@
       }
     }
 
-    async function generateSHA256Hash(input) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(input);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    function generateKeyFromCode(code) {
+      const baseKey = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let shiftedKey = '';
+      let shift = parseInt(code) % 36; 
+      for (let i = 0; i < baseKey.length; i++) {
+        shiftedKey += baseKey[(i + shift) % baseKey.length];
+      }
+      return shiftedKey;
+    }
+
+    function encodeUsername(username, key) {
+      const baseKey = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let encoded = '';
+      for (let char of username) {
+        let index = baseKey.indexOf(char);
+        if (index !== -1) {
+          encoded += key[index];
+        } else {
+          encoded += char; 
+        }
+      }
+      return encoded;
     }
 
     async function getCode() {
@@ -86,38 +102,15 @@
         return;
       }
 
-      const usernameHash = await generateSHA256Hash(username);
-      localStorage.setItem('verifiedUser', username);
+      const key = generateKeyFromCode(secretCode);
+      const encodedUsername = encodeUsername(username, key);
 
+      localStorage.setItem('verifiedUser', encodedUsername);
       if (redirectUrl) {
         const decodedRedirectUrl = decodeURIComponent(redirectUrl);
-        window.location.href = `${decodedRedirectUrl}?username=${usernameHash}`;
+        window.location.href = `${decodedRedirectUrl}?username=${encodedUsername}`;
       } else {
-        window.location.href = `index.html?username=${usernameHash}`;
-      }
-    }
-
-    async function login() {
-      let username = document.getElementById('username').value.trim().toLowerCase();
-      if (!username) return alert('Enter your Scratch username.');
-
-      const response = await fetch(`${serverUrl}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username })
-      });
-
-      const result = await response.json();
-      if (result.verified) {
-        localStorage.setItem('verifiedUser', username);
-        if (redirectUrl) {
-          const decodedRedirectUrl = decodeURIComponent(redirectUrl);
-          window.location.href = `${decodedRedirectUrl}?username=${username}`;
-        } else {
-          window.location.href = 'index.html';
-        }
-      } else {
-        document.getElementById('codeMessage').textContent = result.message;
+        window.location.href = `index.html?username=${encodedUsername}`;
       }
     }
 
@@ -125,14 +118,8 @@
       let username = document.getElementById('username').value.trim().toLowerCase();
       if (!username) return alert('Enter your username first.');
 
-      const response = await fetch(`${serverUrl}/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username })
-      });
-
-      const result = await response.json();
-      if (result.verified) {
+      // Simulate verification
+      if (username) {
         localStorage.setItem('verifiedUser', username);
         if (redirectUrl) {
           const decodedRedirectUrl = decodeURIComponent(redirectUrl);
@@ -141,7 +128,7 @@
           window.location.href = 'index.html';
         }
       } else {
-        alert(result.message || 'Verification failed.');
+        alert('Verification failed.');
       }
     }
   </script>
