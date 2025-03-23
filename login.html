@@ -1,48 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
 
-    .container {
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      width: 350px;
-    }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 350px;
+        }
 
-    input,
-    button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-size: 16px;
-    }
+        input,
+        button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
 
-    button {
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-    }
-  </style>
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
 </head>
-
 <body>
   <div class="container">
     <h2>Login</h2>
@@ -53,6 +51,36 @@
   </div>
 
   <script>
+    // Secret code used to shift the encoding key
+    const secretCode = '972'; 
+
+    // Generate a key by shifting the baseKey based on the secret code
+    function generateKeyFromCode(code) {
+      const baseKey = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let shiftedKey = '';
+      let shift = parseInt(code) % 36; 
+      for (let i = 0; i < baseKey.length; i++) {
+        shiftedKey += baseKey[(i + shift) % baseKey.length];
+      }
+      return shiftedKey;
+    }
+
+    // Encode the username using the generated key
+    function encodeUsername(username, key) {
+      const baseKey = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let encoded = '';
+      for (let char of username) {
+        let index = baseKey.indexOf(char);
+        if (index !== -1) {
+          encoded += key[index];
+        } else {
+          encoded += char; 
+        }
+      }
+      return encoded;
+    }
+
+    // Function to get code for username
     async function getCode() {
       let username = document.getElementById('username').value.trim().toLowerCase();
       if (!username) {
@@ -74,6 +102,7 @@
       }
     }
 
+    // Function to verify code and handle the login process
     async function verifyCode() {
       let username = document.getElementById('username').value.trim().toLowerCase();
       if (!username) return alert('Enter your username first.');
@@ -86,14 +115,30 @@
 
       const result = await response.json();
       if (response.ok) {
-        localStorage.setItem('verifiedUser', username);
+        // Use the encoding function to encode the username
+        const key = generateKeyFromCode(secretCode);
+        const encodedUsername = encodeUsername(username, key);
+
+        // Store the encoded username and logged-in status in localStorage
+        localStorage.setItem('encodedUsername', encodedUsername);
+        localStorage.setItem('loggedIn', 'true');
         alert(result.message);
-        window.location.href = 'upload.html';
+
+        // Check if there's a redirect parameter in the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect');
+        
+        if (redirect) {
+          // Redirect to the provided URL with the encoded username as a parameter
+          window.location.href = `${redirect}?username=${encodeURIComponent(encodedUsername)}`;
+        } else {
+          // Default redirection if no redirect parameter is present
+          window.location.href = 'index.html?username=' + encodeURIComponent(encodedUsername);
+        }
       } else {
         alert(result.message);
       }
     }
   </script>
 </body>
-
 </html>
