@@ -1,11 +1,8 @@
-<!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Upload Image</title>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -75,23 +72,18 @@
     }
   </style>
 </head>
-
 <body>
 
   <div class="container">
     <h2>Upload Your Image</h2>
     <input type="file" id="imageInput" accept="image/*">
     <button onclick="uploadImage()">Upload</button>
-    <p>If this keeps saying 'unauthorised', delete cookies data then try again. </p>
 
     <div id="imageLink" class="message"></div>
   </div>
 
   <script>
     const serverUrl = 'https://image-hoster.onrender.com';
-    const sightengineApiUrl = 'https://api.sightengine.com/1.0/check.json';
-    const apiUser = '1954565126';
-    const apiSecret = 'eXKwnyQDLB4bU29FSkZjsiHHiwxSM3mL';
     const username = localStorage.getItem('verifiedUser');
 
     // Redirect to login page if user is not verified
@@ -107,67 +99,18 @@
       formData.append('image', fileInput.files[0]);
       formData.append('username', username);
 
-      try {
-        // Step 1: Upload image to server
-        const uploadResponse = await fetch(`${serverUrl}/upload`, {
-          method: 'POST',
-          body: formData
-        });
+      const response = await fetch(${serverUrl}/upload, {
+        method: 'POST',
+        body: formData
+      });
 
-        const uploadResult = await uploadResponse.json();
-        if (!uploadResponse.ok) {
-          return alert(uploadResult.message);
-        }
-
-        const imageUrl = uploadResult.url;
-
-        // Step 2: Analyze image with Sightengine using Axios
-        analyzeImage(imageUrl);
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Something went wrong. Please try again later.');
-      }
-    }
-
-    async function analyzeImage(imageUrl) {
-      try {
-        const response = await axios.get(sightengineApiUrl, {
-          params: {
-            url: imageUrl,
-            models: 'nudity,weapon,gore', // Specify models to check
-            api_user: apiUser,
-            api_secret: apiSecret,
-          }
-        });
-
-        const result = response.data;
-
-        if (result.status === 'success') {
-          const nudity = result.nudity && (result.nudity.safe < 0.9);
-          const weapon = result.weapon && result.weapon > 0.5;
-          const gore = result.gore && result.gore > 0.5;
-
-          // Step 3: Check for inappropriate content
-          if (nudity || weapon || gore) {
-            return alert('Image contains inappropriate content. Please upload a safe image.');
-          }
-
-          // Step 4: Show the image link if safe
-          document.getElementById('imageLink').innerHTML = `<a href="${imageUrl}" target="_blank">View Image</a>`;
-        } else {
-          alert('Error analyzing image. Please try again.');
-        }
-      } catch (error) {
-        if (error.response) {
-          console.error('Error:', error.response.data);
-          alert('Error analyzing the image.');
-        } else {
-          console.error('Error:', error.message);
-          alert('Network error or invalid request.');
-        }
+      const result = await response.json();
+      if (response.ok) {
+        document.getElementById('imageLink').innerHTML = <a href="${result.url}" target="_blank">View Image</a>;
+      } else {
+        alert(result.message);
       }
     }
   </script>
 </body>
-
 </html>
