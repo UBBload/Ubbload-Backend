@@ -72,6 +72,13 @@
     a:hover {
       text-decoration: underline;
     }
+
+    #imagePreview {
+      display: none;
+      width: 100%;
+      margin-top: 20px;
+      border-radius: 5px;
+    }
   </style>
 </head>
 
@@ -79,6 +86,7 @@
   <div class="container">
     <h2>Upload Your Image</h2>
     <input type="file" id="imageInput" accept="image/*">
+    <img id="imagePreview" src="#" alt="Image Preview">
     <button onclick="uploadImage()">Upload</button>
 
     <div id="imageLink" class="message"></div>
@@ -88,7 +96,7 @@
     const serverUrl = 'https://image-hoster.onrender.com';
     const username = localStorage.getItem('verifiedUser');
 
-    if (!username) {
+    if (!username || username === 'null' || username === 'undefined') {
       window.location.href = 'login.html';
     }
 
@@ -99,24 +107,39 @@
         return;
       }
 
+      const file = fileInput.files[0];
       const formData = new FormData();
-      formData.append('image', fileInput.files[0]);
+      formData.append('image', file);
       formData.append('username', username);
 
-      const response = await fetch(`${serverUrl}/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      // Show preview before upload
+      const preview = document.getElementById('imagePreview');
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
 
-      const result = await response.json();
+      try {
+        const response = await fetch(`${serverUrl}/upload`, {
+          method: 'POST',
+          body: formData
+        });
 
-      if (response.ok) {
-        document.getElementById('imageLink').innerHTML = `
-          <p>✅ Upload successful!</p>
-          <a href="${result.url}" target="_blank">View Image</a>
-        `;
-      } else {
-        alert(`Error: ${result.message}`);
+        const result = await response.json();
+
+        if (response.ok) {
+          document.getElementById('imageLink').innerHTML = `
+            <p>✅ Upload successful!</p>
+            <a href="${result.url}" target="_blank">View Image</a>
+          `;
+        } else {
+          alert(`Error: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert('❌ Network error or server not responding.');
       }
     }
   </script>
