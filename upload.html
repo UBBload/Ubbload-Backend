@@ -83,6 +83,7 @@
   </div>
 
   <script>
+    // Backend API URL
     const serverUrl = 'https://image-hoster.onrender.com';
     const username = localStorage.getItem('verifiedUser');
 
@@ -93,23 +94,36 @@
 
     async function uploadImage() {
       const fileInput = document.getElementById('imageInput');
-      if (!fileInput.files.length) return alert('Select an image first.');
+      
+      // Check if the file is selected
+      if (!fileInput.files.length) {
+        alert('Select an image first.');
+        return;
+      }
 
       const formData = new FormData();
       formData.append('image', fileInput.files[0]);
       formData.append('username', username);
 
-      const response = await fetch(`${serverUrl}/upload`, {
-        method: 'POST',
-        body: formData
-      });
+      try {
+        const response = await fetch(`${serverUrl}/upload`, {
+          method: 'POST',
+          body: formData
+        });
 
-      const result = await response.json();
-      if (response.ok) {
-        // Using template literals properly for embedding the URL
-        document.getElementById('imageLink').innerHTML = `<a href="${result.url}" target="_blank">View Image</a>`;
-      } else {
-        alert(result.message);
+        const result = await response.json();
+
+        if (response.ok) {
+          // Show the link if upload is successful
+          document.getElementById('imageLink').innerHTML = `
+            <p>✅ Upload successful!</p>
+            <a href="${result.url}" target="_blank">View Image</a>
+          `;
+        } else {
+          alert(`Error: ${result.message}`);
+        }
+      } catch (error) {
+        alert('Upload failed. Please try again later.');
       }
     }
   </script>
