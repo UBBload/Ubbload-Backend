@@ -16,24 +16,32 @@ const ALLOWED_ORIGINS = [
   'https://ubbload.github.io'
 ];
 
-// Enable CORS
+// Enable CORS with Debug Logging
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('Origin:', origin); // Log origin to debug CORS issues
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Handle preflight requests for all routes
+app.options('*', cors());
+
 app.use(express.json());
+
+// Serve static images with CORS enabled
+app.use('/images', cors(), express.static(path.join(__dirname, 'images')));
 
 // Configure image uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const userDir = path.join(__dirname, 'images', req.body.username);
+    const userDir = path.join(__dirname, 'images', req.body.username.toLowerCase());
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
     }
@@ -43,19 +51,24 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + path.extname(file.originalname));
   }
 });
-const upload = multer({ storage: storage, limits: { fileSize: 5 * 1024 * 1024 } });
-app.use('/images', express.static(path.join(__dirname, 'images')));
 
-// Load users
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 } // Limit file size to 5MB
+});
+
+// Load existing users from file
 let users = {};
 if (fs.existsSync(USERS_FILE)) {
   users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
 }
 
-// Save users
-const saveUsers = () => fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+// Save users to file
+const saveUsers = () => {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+};
 
-// Login - Generate verification code
+// ✅ Login - Generate verification code
 app.post('/login', (req, res) => {
   let { username } = req.body;
   if (!username) return res.status(400).json({ message: 'Username required' });
@@ -70,16 +83,20 @@ app.post('/login', (req, res) => {
   users[username] = { code, verified: false };
   saveUsers();
 
-  res.json({ message: `Add this code to your Scratch bio: ${code}. This may take a few minutes to update.` });
+  res.json({
+    message: `Add this code to your Scratch bio: ${code}. This may take a few minutes to update.`,
+  });
 });
 
-// Verify Scratch bio
+// ✅ Verify Scratch bio
 app.post('/verify', async (req, res) => {
   let { username } = req.body;
   if (!username) return res.status(400).json({ message: 'Invalid username' });
 
   username = username.toLowerCase();
-  if (!users[username]) return res.status(400).json({ message: 'User not found. Please login first.' });
+  if (!users[username]) {
+    return res.status(400).json({ message: 'User not found. Please login first.' });
+  }
 
   if (users[username].verified) {
     return res.json({ message: 'You are already verified!', verified: true });
@@ -97,17 +114,20 @@ app.post('/verify', async (req, res) => {
       res.status(400).json({ message: 'Code not found in bio' });
     }
   } catch (error) {
+    console.error('Error checking profile:', error.message);
     res.status(500).json({ message: 'Error checking profile' });
   }
 });
 
-// Image upload
+// ✅ Upload image
 app.post('/upload', upload.single('image'), (req, res) => {
   let { username } = req.body;
   if (!username) return res.status(400).json({ message: 'Username required' });
 
   username = username.toLowerCase();
-  if (!users[username]?.verified) return res.status(403).json({ message: 'Unauthorized' });
+  if (!users[username]?.verified) {
+    return res.status(403).json({ message: 'Unauthorized' });
+  }
 
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
@@ -115,7 +135,16 @@ app.post('/upload', upload.single('image'), (req, res) => {
   res.json({ message: 'Image uploaded successfully', url: publicUrl });
 });
 
-// Start server
+// ✅ Handle invalid CORS requests
+app.use((err, req, res, next) => {
+  if (err.message === 'Not allowed by CORS') {
+    console.error('CORS error:', err.message);
+    return res.status(403).json({ message: 'CORS not allowed for this origin' });
+  }
+  next(err);
+});
+
+// ✅ Start server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
