@@ -53,48 +53,6 @@
   </div>
 
   <script>
-    function getUrlParameter(name) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
-    }
-
-    const redirectUrl = getUrlParameter('redirect');
-    const secretCode = '972';
-
-    if (localStorage.getItem('verifiedUser')) {
-      const username = localStorage.getItem('verifiedUser');
-      if (redirectUrl) {
-        const decodedRedirectUrl = decodeURIComponent(redirectUrl);
-        window.location.href = `${decodedRedirectUrl}?username=${username}`;
-      } else {
-        window.location.href = 'index.html';
-      }
-    }
-
-    function generateKeyFromCode(code) {
-      const baseKey = 'abcdefghijklmnopqrstuvwxyz0123456789';
-      let shiftedKey = '';
-      let shift = parseInt(code) % 36; 
-      for (let i = 0; i < baseKey.length; i++) {
-        shiftedKey += baseKey[(i + shift) % baseKey.length];
-      }
-      return shiftedKey;
-    }
-
-    function encodeUsername(username, key) {
-      const baseKey = 'abcdefghijklmnopqrstuvwxyz0123456789';
-      let encoded = '';
-      for (let char of username) {
-        let index = baseKey.indexOf(char);
-        if (index !== -1) {
-          encoded += key[index];
-        } else {
-          encoded += char; 
-        }
-      }
-      return encoded;
-    }
-
     async function getCode() {
       let username = document.getElementById('username').value.trim().toLowerCase();
       if (!username) {
@@ -102,15 +60,17 @@
         return;
       }
 
-      const key = generateKeyFromCode(secretCode);
-      const encodedUsername = encodeUsername(username, key);
+      const response = await fetch('https://image-hoster.onrender.com/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+      });
 
-      localStorage.setItem('verifiedUser', encodedUsername);
-      if (redirectUrl) {
-        const decodedRedirectUrl = decodeURIComponent(redirectUrl);
-        window.location.href = `${decodedRedirectUrl}?username=${encodedUsername}`;
+      const result = await response.json();
+      if (response.ok) {
+        document.getElementById('codeMessage').textContent = result.message;
       } else {
-        window.location.href = `index.html?username=${encodedUsername}`;
+        alert(result.message);
       }
     }
 
@@ -118,17 +78,19 @@
       let username = document.getElementById('username').value.trim().toLowerCase();
       if (!username) return alert('Enter your username first.');
 
-      // Simulate verification
-      if (username) {
+      const response = await fetch('https://image-hoster.onrender.com/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+      });
+
+      const result = await response.json();
+      if (response.ok) {
         localStorage.setItem('verifiedUser', username);
-        if (redirectUrl) {
-          const decodedRedirectUrl = decodeURIComponent(redirectUrl);
-          window.location.href = `${decodedRedirectUrl}?username=${username}`;
-        } else {
-          window.location.href = 'index.html';
-        }
+        alert(result.message);
+        window.location.href = 'upload.html';
       } else {
-        alert('Verification failed.');
+        alert(result.message);
       }
     }
   </script>
