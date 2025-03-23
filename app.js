@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const USERS_FILE = 'users.json';
 
-// Allowed front-end URLs
+// ✅ Allowed front-end URLs for CORS
 const ALLOWED_ORIGINS = [
   'https://scratch-image-hoster.netlify.app',
   'https://ubbload.netlify.app',
@@ -33,14 +33,14 @@ app.use(cors({
 // ✅ Handle preflight requests for all routes
 app.options('*', cors());
 
-// ✅ Parse JSON and URL-encoded data
-app.use(express.json()); // Handle JSON payloads
-app.use(express.urlencoded({ extended: true })); // Handle URL-encoded payloads
+// ✅ Middleware to parse JSON and URL-encoded data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // ✅ Serve static images with CORS enabled
 app.use('/images', cors(), express.static(path.join(__dirname, 'images')));
 
-// ✅ Configure image uploads with error handling
+// ✅ Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const username = req.body?.username?.toLowerCase(); // Handle missing username safely
@@ -135,10 +135,10 @@ app.post('/verify', async (req, res) => {
 });
 
 // ===============================
-// ✅ Upload image
+// ✅ Upload image with form-data
 // ===============================
 app.post('/upload', upload.single('image'), (req, res) => {
-  console.log('Request Body:', req.body); // Log request body for debugging
+  console.log('Request Body:', req.body); // Debugging log to check req.body
 
   let { username } = req.body;
   if (!username) {
