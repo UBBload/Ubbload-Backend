@@ -1,4 +1,6 @@
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -72,8 +74,8 @@
     }
   </style>
 </head>
-<body>
 
+<body>
   <div class="container">
     <h2>Upload Your Image</h2>
     <input type="file" id="imageInput" accept="image/*">
@@ -83,19 +85,15 @@
   </div>
 
   <script>
-    // Backend API URL
     const serverUrl = 'https://image-hoster.onrender.com';
     const username = localStorage.getItem('verifiedUser');
 
-    // Redirect to login page if user is not verified
     if (!username) {
       window.location.href = 'login.html';
     }
 
     async function uploadImage() {
       const fileInput = document.getElementById('imageInput');
-      
-      // Check if the file is selected
       if (!fileInput.files.length) {
         alert('Select an image first.');
         return;
@@ -105,27 +103,23 @@
       formData.append('image', fileInput.files[0]);
       formData.append('username', username);
 
-      try {
-        const response = await fetch(`${serverUrl}/upload`, {
-          method: 'POST',
-          body: formData
-        });
+      const response = await fetch(`${serverUrl}/upload`, {
+        method: 'POST',
+        body: formData
+      });
 
-        const result = await response.json();
+      const result = await response.json();
 
-        if (response.ok) {
-          // Show the link if upload is successful
-          document.getElementById('imageLink').innerHTML = `
-            <p>✅ Upload successful!</p>
-            <a href="${result.url}" target="_blank">View Image</a>
-          `;
-        } else {
-          alert(`Error: ${result.message}`);
-        }
-      } catch (error) {
-        alert('Upload failed. Please try again later.');
+      if (response.ok) {
+        document.getElementById('imageLink').innerHTML = `
+          <p>✅ Upload successful!</p>
+          <a href="${result.url}" target="_blank">View Image</a>
+        `;
+      } else {
+        alert(`Error: ${result.message}`);
       }
     }
   </script>
 </body>
+
 </html>
