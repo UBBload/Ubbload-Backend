@@ -9,14 +9,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const USERS_FILE = 'users.json';
 
-// ✅ Allowed front-end URLs for CORS
+// Cors thiggy
 const ALLOWED_ORIGINS = [
   'https://scratch-image-hoster.netlify.app',
   'https://ubbload.netlify.app',
   'https://ubbload.github.io'
 ];
 
-// ✅ Enable CORS with Debug Logging
+// some debugging
 app.use(cors({
   origin: function (origin, callback) {
     console.log('Origin:', origin || 'No origin provided'); // Log origin for debugging
@@ -30,17 +30,15 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// ✅ Handle preflight requests for all routes
 app.options('*', cors());
 
-// ✅ Middleware to parse JSON and URL-encoded data
+// encoding and parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ Serve static images with CORS enabled
 app.use('/images', cors(), express.static(path.join(__dirname, 'images')));
 
-// ✅ Configure multer for image uploads
+// multer disk storage thing. 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const username = req.body?.username?.toLowerCase(); // Handle missing username safely
@@ -64,20 +62,18 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB max file size
 });
 
-// ✅ Load existing users from file
+// user.json file to check if this person has logged in before
 let users = {};
 if (fs.existsSync(USERS_FILE)) {
   users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
 }
 
-// ✅ Save users to file
+// Save users to file
 const saveUsers = () => {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 };
 
-// ===============================
-// ✅ Login - Generate verification code
-// ===============================
+// Login through ubbbbbbbload
 app.post('/login', (req, res) => {
   let { username } = req.body;
   if (!username) {
@@ -99,9 +95,7 @@ app.post('/login', (req, res) => {
   });
 });
 
-// ===============================
-// ✅ Verify Scratch bio
-// ===============================
+// Verification for the code and login
 app.post('/verify', async (req, res) => {
   let { username } = req.body;
   if (!username) {
@@ -134,9 +128,7 @@ app.post('/verify', async (req, res) => {
   }
 });
 
-// ===============================
-// ✅ Upload image with form-data
-// ===============================
+// UBBload an image
 app.post('/upload', upload.single('image'), (req, res) => {
   console.log('Request Body:', req.body); // Debugging log to check req.body
 
@@ -158,9 +150,7 @@ app.post('/upload', upload.single('image'), (req, res) => {
   res.json({ message: 'Image uploaded successfully', url: publicUrl });
 });
 
-// ===============================
-// ✅ Handle invalid CORS requests
-// ===============================
+// cors debug
 app.use((err, req, res, next) => {
   if (err.message === 'Not allowed by CORS') {
     console.error('CORS error:', err.message);
@@ -169,9 +159,7 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// ===============================
-// ✅ Start the server
-// ===============================
+// soem stuff
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
