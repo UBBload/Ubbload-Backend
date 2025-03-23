@@ -99,14 +99,15 @@
       formData.append('image', fileInput.files[0]);
       formData.append('username', username);
 
-      const response = await fetch(${serverUrl}/upload, {
+      const response = await fetch(`${serverUrl}/upload`, {
         method: 'POST',
         body: formData
       });
 
       const result = await response.json();
       if (response.ok) {
-        document.getElementById('imageLink').innerHTML = <a href="${result.url}" target="_blank">View Image</a>;
+        // Using template literals properly for embedding the URL
+        document.getElementById('imageLink').innerHTML = `<a href="${result.url}" target="_blank">View Image</a>`;
       } else {
         alert(result.message);
       }
