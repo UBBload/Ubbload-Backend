@@ -106,13 +106,13 @@
         alert('Select an image first.');
         return;
       }
-
+      // file stuff
       const file = fileInput.files[0];
       const formData = new FormData();
       formData.append('image', file);
       formData.append('username', username);
 
-      // Show preview before upload
+      // Show preview
       const preview = document.getElementById('imagePreview');
       const reader = new FileReader();
       reader.onload = function (e) {
@@ -131,7 +131,7 @@
 
         if (response.ok) {
           document.getElementById('imageLink').innerHTML = `
-            <p>✅ Upload successful!</p>
+            <p>Upload successful!</p>
             <a href="${result.url}" target="_blank">View Image</a>
           `;
         } else {
@@ -139,7 +139,7 @@
         }
       } catch (error) {
         console.error('Upload error:', error);
-        alert('❌ Network error or server not responding.');
+        alert('Network error or server not responding.');
       }
     }
   </script>
