@@ -19,11 +19,9 @@ const ALLOWED_ORIGINS = [
 // Enable CORS
 app.use(cors({
   origin: function (origin, callback) {
-    console.log("Request Origin:", origin);
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
-      console.log("Blocked by CORS:", origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -33,7 +31,19 @@ app.use(cors({
 app.use(express.json());
 
 // Configure image uploads
-const upload = multer({ dest: 'images/', limits: { fileSize: 5 * 1024 * 1024 } });
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const userDir = path.join(__dirname, 'images', req.body.username);
+    if (!fs.existsSync(userDir)) {
+      fs.mkdirSync(userDir, { recursive: true });
+    }
+    cb(null, userDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage, limits: { fileSize: 5 * 1024 * 1024 } });
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // Load users
@@ -101,16 +111,8 @@ app.post('/upload', upload.single('image'), (req, res) => {
 
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-  const userDir = path.join(__dirname, 'images', username);
-  if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
-
-  const targetPath = path.join(userDir, req.file.originalname);
-  fs.rename(req.file.path, targetPath, (err) => {
-    if (err) return res.status(500).json({ message: 'File upload failed' });
-
-    const publicUrl = `https://image-hoster.onrender.com/images/${username}/${req.file.originalname}`;
-    res.json({ message: 'Image uploaded successfully', url: publicUrl });
-  });
+  const publicUrl = `https://image-hoster.onrender.com/images/${username}/${req.file.filename}`;
+  res.json({ message: 'Image uploaded successfully', url: publicUrl });
 });
 
 // Start server
