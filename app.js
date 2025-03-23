@@ -9,14 +9,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const USERS_FILE = 'users.json';
 
-// Cors thiggy
+// CORS configuration
 const ALLOWED_ORIGINS = [
   'https://scratch-image-hoster.netlify.app',
   'https://ubbload.netlify.app',
   'https://ubbload.github.io'
 ];
 
-// some debugging
+// Debugging CORS origins
 app.use(cors({
   origin: function (origin, callback) {
     console.log('Origin:', origin || 'No origin provided'); // Log origin for debugging
@@ -32,13 +32,13 @@ app.use(cors({
 
 app.options('*', cors());
 
-// encoding and parsing
+// JSON and URL-encoded data parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/images', cors(), express.static(path.join(__dirname, 'images')));
 
-// multer disk storage thing. 
+// Multer disk storage configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const username = req.body?.username?.toLowerCase(); // Handle missing username safely
@@ -62,7 +62,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB max file size
 });
 
-// user.json file to check if this person has logged in before
+// Load users from file
 let users = {};
 if (fs.existsSync(USERS_FILE)) {
   users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
@@ -73,7 +73,7 @@ const saveUsers = () => {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 };
 
-// Login through ubbbbbbbload
+// Login endpoint
 app.post('/login', (req, res) => {
   let { username } = req.body;
   if (!username) {
@@ -95,7 +95,7 @@ app.post('/login', (req, res) => {
   });
 });
 
-// Verification for the code and login
+// Verification endpoint
 app.post('/verify', async (req, res) => {
   let { username } = req.body;
   if (!username) {
@@ -128,7 +128,7 @@ app.post('/verify', async (req, res) => {
   }
 });
 
-// UBBload an image
+// Image upload endpoint
 app.post('/upload', upload.single('image'), (req, res) => {
   console.log('Request Body:', req.body); // Debugging log to check req.body
 
@@ -150,7 +150,7 @@ app.post('/upload', upload.single('image'), (req, res) => {
   res.json({ message: 'Image uploaded successfully', url: publicUrl });
 });
 
-// cors debug
+// CORS error handling
 app.use((err, req, res, next) => {
   if (err.message === 'Not allowed by CORS') {
     console.error('CORS error:', err.message);
@@ -159,7 +159,7 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// soem stuff
+// Start the server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
