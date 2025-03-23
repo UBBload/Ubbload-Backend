@@ -16,10 +16,10 @@ const ALLOWED_ORIGINS = [
   'https://ubbload.github.io'
 ];
 
-// Enable CORS with Debug Logging
+// ✅ Enable CORS with Debug Logging
 app.use(cors({
   origin: function (origin, callback) {
-    console.log('Origin:', origin); // Log origin to debug CORS issues
+    console.log('Origin:', origin || 'No origin provided'); // Log origin for debugging
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
@@ -30,18 +30,25 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Handle preflight requests for all routes
+// ✅ Handle preflight requests for all routes
 app.options('*', cors());
 
-app.use(express.json());
+// ✅ Parse JSON and URL-encoded data
+app.use(express.json()); // Handle JSON payloads
+app.use(express.urlencoded({ extended: true })); // Handle URL-encoded payloads
 
-// Serve static images with CORS enabled
+// ✅ Serve static images with CORS enabled
 app.use('/images', cors(), express.static(path.join(__dirname, 'images')));
 
-// Configure image uploads
+// ✅ Configure image uploads with error handling
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const userDir = path.join(__dirname, 'images', req.body.username.toLowerCase());
+    const username = req.body?.username?.toLowerCase(); // Handle missing username safely
+    if (!username) {
+      return cb(new Error('Username is required'));
+    }
+
+    const userDir = path.join(__dirname, 'images', username);
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
     }
@@ -54,24 +61,28 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 } // Limit file size to 5MB
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB max file size
 });
 
-// Load existing users from file
+// ✅ Load existing users from file
 let users = {};
 if (fs.existsSync(USERS_FILE)) {
   users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
 }
 
-// Save users to file
+// ✅ Save users to file
 const saveUsers = () => {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 };
 
+// ===============================
 // ✅ Login - Generate verification code
+// ===============================
 app.post('/login', (req, res) => {
   let { username } = req.body;
-  if (!username) return res.status(400).json({ message: 'Username required' });
+  if (!username) {
+    return res.status(400).json({ message: 'Username required' });
+  }
 
   username = username.toLowerCase();
 
@@ -88,10 +99,14 @@ app.post('/login', (req, res) => {
   });
 });
 
+// ===============================
 // ✅ Verify Scratch bio
+// ===============================
 app.post('/verify', async (req, res) => {
   let { username } = req.body;
-  if (!username) return res.status(400).json({ message: 'Invalid username' });
+  if (!username) {
+    return res.status(400).json({ message: 'Invalid username' });
+  }
 
   username = username.toLowerCase();
   if (!users[username]) {
@@ -119,23 +134,33 @@ app.post('/verify', async (req, res) => {
   }
 });
 
+// ===============================
 // ✅ Upload image
+// ===============================
 app.post('/upload', upload.single('image'), (req, res) => {
+  console.log('Request Body:', req.body); // Log request body for debugging
+
   let { username } = req.body;
-  if (!username) return res.status(400).json({ message: 'Username required' });
+  if (!username) {
+    return res.status(400).json({ message: 'Username required' });
+  }
 
   username = username.toLowerCase();
   if (!users[username]?.verified) {
     return res.status(403).json({ message: 'Unauthorized' });
   }
 
-  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
 
   const publicUrl = `https://image-hoster.onrender.com/images/${username}/${req.file.filename}`;
   res.json({ message: 'Image uploaded successfully', url: publicUrl });
 });
 
+// ===============================
 // ✅ Handle invalid CORS requests
+// ===============================
 app.use((err, req, res, next) => {
   if (err.message === 'Not allowed by CORS') {
     console.error('CORS error:', err.message);
@@ -144,7 +169,9 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// ✅ Start server
+// ===============================
+// ✅ Start the server
+// ===============================
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
