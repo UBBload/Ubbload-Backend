@@ -93,7 +93,7 @@
   </div>
 
   <script>
-    const serverUrl = 'https://image-hoster.onrender.com';
+    const serverUrl = ''; // Leave empty for same-origin calls
     const username = localStorage.getItem('verifiedUser');
 
     if (!username || username === 'null' || username === 'undefined') {
@@ -106,13 +106,12 @@
         alert('Select an image first.');
         return;
       }
-      // File handling
+      
       const file = fileInput.files[0];
       const formData = new FormData();
       formData.append('image', file);
       formData.append('username', username);
 
-      // Show preview
       const preview = document.getElementById('imagePreview');
       const reader = new FileReader();
       reader.onload = function (e) {
