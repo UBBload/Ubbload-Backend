@@ -2,50 +2,26 @@ const express = require('express');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
-const cors = require('cors');
 const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const USERS_FILE = 'users.json';
 
-// CORS configuration
-const ALLOWED_ORIGINS = [
-  'https://scratch-image-hoster.netlify.app',
-  'https://ubbload.netlify.app',
-  'https://ubbload.github.io'
-];
-
-// Debugging CORS origins
-app.use(cors({
-  origin: function (origin, callback) {
-    console.log('Origin:', origin || 'No origin provided'); // Log origin for debugging
-    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-app.options('*', cors());
-
-// JSON and URL-encoded data parsing
+// Enable JSON and URL-encoded parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/images', cors(), express.static(path.join(__dirname, 'images')));
+// Serve static files (index.html, login.html, etc.)
+app.use(express.static(path.join(__dirname)));
 
-// Multer disk storage configuration
+// Serve uploaded images
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
+// Multer storage configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const username = req.body?.username?.toLowerCase(); // Handle missing username safely
-    if (!username) {
-      return cb(new Error('Username is required'));
-    }
-
+    const username = req.body.username.toLowerCase();
     const userDir = path.join(__dirname, 'images', username);
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
@@ -57,12 +33,9 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB max file size
-});
+const upload = multer({ storage: storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// Load users from file
+// Load existing users from file
 let users = {};
 if (fs.existsSync(USERS_FILE)) {
   users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
@@ -76,14 +49,11 @@ const saveUsers = () => {
 // Login endpoint
 app.post('/login', (req, res) => {
   let { username } = req.body;
-  if (!username) {
-    return res.status(400).json({ message: 'Username required' });
-  }
+  if (!username) return res.status(400).json({ message: 'Username required' });
 
   username = username.toLowerCase();
-
   if (users[username]?.verified) {
-    return res.json({ message: 'You are already verified!', verified: true });
+    return res.json({ message: 'You are already verified!' });
   }
 
   const code = Math.random().toString(36).substring(2, 8);
@@ -91,75 +61,45 @@ app.post('/login', (req, res) => {
   saveUsers();
 
   res.json({
-    message: `Add this code to your Scratch bio: ${code}. This may take a few minutes to update.`,
+    message: `Add this code to your Scratch bio: ${code}. This may take a few minutes to update.`
   });
 });
 
 // Verification endpoint
 app.post('/verify', async (req, res) => {
   let { username } = req.body;
-  if (!username) {
-    return res.status(400).json({ message: 'Invalid username' });
-  }
-
   username = username.toLowerCase();
   if (!users[username]) {
     return res.status(400).json({ message: 'User not found. Please login first.' });
   }
 
-  if (users[username].verified) {
-    return res.json({ message: 'You are already verified!', verified: true });
-  }
-
   try {
     const response = await axios.get(`https://api.scratch.mit.edu/users/${username}`);
     const bio = response.data.profile.bio;
-
     if (bio.includes(users[username].code)) {
       users[username].verified = true;
       saveUsers();
-      res.json({ message: 'Verification successful', verified: true });
+      res.json({ message: 'Verification successful' });
     } else {
       res.status(400).json({ message: 'Code not found in bio' });
     }
   } catch (error) {
-    console.error('Error checking profile:', error.message);
     res.status(500).json({ message: 'Error checking profile' });
   }
 });
 
 // Image upload endpoint
 app.post('/upload', upload.single('image'), (req, res) => {
-  console.log('Request Body:', req.body); // Debugging log to check req.body
-
-  let { username } = req.body;
-  if (!username) {
-    return res.status(400).json({ message: 'Username required' });
-  }
-
-  username = username.toLowerCase();
+  const { username } = req.body;
   if (!users[username]?.verified) {
     return res.status(403).json({ message: 'Unauthorized' });
   }
 
-  if (!req.file) {
-    return res.status(400).json({ message: 'No file uploaded' });
-  }
-
-  const publicUrl = `https://image-hoster.onrender.com/images/${username}/${req.file.filename}`;
+  const publicUrl = `/images/${username}/${req.file.filename}`;
   res.json({ message: 'Image uploaded successfully', url: publicUrl });
 });
 
-// CORS error handling
-app.use((err, req, res, next) => {
-  if (err.message === 'Not allowed by CORS') {
-    console.error('CORS error:', err.message);
-    return res.status(403).json({ message: 'CORS not allowed for this origin' });
-  }
-  next(err);
-});
-
-// Start the server
+// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
