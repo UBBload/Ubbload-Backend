@@ -111,6 +111,21 @@
       return encoded;
     }
 
+    // Decode the encoded username using the key
+    function decodeUsername(encodedUsername, key) {
+      const baseKey = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let decoded = '';
+      for (let char of encodedUsername) {
+        let index = key.indexOf(char);
+        if (index !== -1) {
+          decoded += baseKey[index];
+        } else {
+          decoded += char;
+        }
+      }
+      return decoded;
+    }
+
     // Request a verification code
     async function getCode() {
       let username = document.getElementById('username').value.trim().toLowerCase();
@@ -126,15 +141,19 @@
           body: JSON.stringify({ username })
         });
 
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const result = await response.json();
-        if (response.ok) {
+        if (result.success) {
           showSuccess(result.message);
         } else {
-          showError(result.message);
+          showError(result.message || 'Unexpected error during code fetching.');
         }
       } catch (error) {
         console.error('Error fetching login:', error);
-        showError('An error occurred while requesting the code. Please try again.');
+        showError(`An error occurred while requesting the code: ${error.message}`);
       }
     }
 
@@ -158,8 +177,12 @@
           body: JSON.stringify({ username })
         });
 
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const result = await response.json();
-        if (response.ok) {
+        if (result.success) {
           const key = generateKeyFromCode(secretCode);
           const encodedUsername = encodeUsername(username, key);
 
@@ -170,11 +193,11 @@
           showSuccess(result.message);
           redirectUser(encodedUsername);
         } else {
-          showError(result.message);
+          showError(result.message || 'Unexpected error during code verification.');
         }
       } catch (error) {
         console.error('Error verifying code:', error);
-        showError('An error occurred while verifying the code. Please try again.');
+        showError(`An error occurred while verifying the code: ${error.message}`);
       }
     }
 
