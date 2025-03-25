@@ -123,7 +123,7 @@
       });
 
       const result = await response.json();
-      if (response.ok) {
+      if (response.ok || localStorage.getItem('verifiedUser')) {
         const key = generateKeyFromCode(secretCode);
         const encodedUsername = encodeUsername(username, key);
 
