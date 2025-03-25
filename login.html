@@ -52,6 +52,16 @@
     <button onclick="verifyCode()">Done</button>
   </div>
 <script>
+if (localStorage.getItem('verifiedUser')) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirectUrl = urlParams.get('redirect');
+
+  if (redirectUrl) {
+    window.location.href = `${redirectUrl}?username=${encodeURIComponent(encodedUsername)}`;
+   } else {
+       window.location.href = `index.html?username=${encodeURIComponent(encodedUsername)}`;
+        }
+ } 
   const secretCode = '972';
 
   // Generate a key by shifting the base key using the secret code
