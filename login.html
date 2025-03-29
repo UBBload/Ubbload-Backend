@@ -73,11 +73,9 @@
     // Check if the user is already verified and redirect
     if (localStorage.getItem('verifiedUser')) {
       const encodedUsername = localStorage.getItem('encodedUsername');
-      console.log('Redirecting Verified User:', encodedUsername);
       redirectUser(encodedUsername);
     }
 
-    const params = new URLSearchParams(window.location.search);
     const secretCode = '972';
 
     // Validate Scratch username (allow letters, numbers, dashes, underscores)
@@ -112,21 +110,6 @@
       return encoded;
     }
 
-    // Decode the encoded username using the key
-    function decodeUsername(encodedUsername, key) {
-      const baseKey = 'abcdefghijklmnopqrstuvwxyz0123456789';
-      let decoded = '';
-      for (let char of encodedUsername) {
-        let index = key.indexOf(char);
-        if (index !== -1) {
-          decoded += baseKey[index];
-        } else {
-          decoded += char;
-        }
-      }
-      return decoded;
-    }
-
     // Request a verification code
     async function getCode() {
       let username = document.getElementById('username').value.trim().toLowerCase();
@@ -142,19 +125,16 @@
           body: JSON.stringify({ username })
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
         const result = await response.json();
-        if (result.success) {
+
+        if (response.ok && result.success) {
           showSuccess(result.message);
         } else {
-          showError(result.message || 'Unexpected error during code fetching.');
+          showError(result.message || 'Failed to request code. Please try again.');
         }
       } catch (error) {
         console.error('Error fetching login:', error);
-        showError(`An error occurred while requesting the code: ${error.message}`);
+        showError('Could not request the code. Please check your connection.');
       }
     }
 
@@ -166,10 +146,7 @@
         return;
       }
 
-      if (!secretCode || isNaN(secretCode)) {
-        showError('Invalid or missing verification code.');
-        return;
-      }
+      console.log('Verifying code...');
 
       try {
         const response = await fetch('https://image-hoster.onrender.com/verify', {
@@ -178,42 +155,44 @@
           body: JSON.stringify({ username })
         });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
         const result = await response.json();
-        if (result.success) {
+
+        // Check if verification was successful
+        if (response.ok && result.success) {
+          console.log('Verification successful!');
           const key = generateKeyFromCode(secretCode);
           const encodedUsername = encodeUsername(username, key);
 
-          // Store encoded username and verified user
+          // Store encoded username and mark as verified
           localStorage.setItem('encodedUsername', encodedUsername);
           localStorage.setItem('verifiedUser', username);
 
-          showSuccess(result.message);
-          console.log('Redirecting to verified page...');
-          redirectUser(encodedUsername);
+          // Show success message before redirecting
+          showSuccess('Verification successful! Redirecting...');
+          
+          // Delay 1.5 seconds for success message before redirecting
+          setTimeout(() => {
+            redirectUser(encodedUsername);
+          }, 1500);
         } else {
-          showError(result.message || 'Unexpected error during code verification.');
+          // If failed, display the provided error message without HTTP codes
+          showError(result.message || 'Verification failed. Try again.');
         }
       } catch (error) {
         console.error('Error verifying code:', error);
-        showError(`An error occurred while verifying the code: ${error.message}`);
+        showError('Verification error. Please try again.');
       }
     }
 
-    // Redirect the user to the desired URL or index
+    // Redirect the user to the desired URL or index.html by default
     function redirectUser(encodedUsername) {
       const urlParams = new URLSearchParams(window.location.search);
       const redirectUrl = urlParams.get('redirect');
 
       // Validate and prevent open redirects
       if (redirectUrl && redirectUrl.startsWith('/') && !redirectUrl.includes('http')) {
-        console.log(`Redirecting to: ${redirectUrl}?username=${encodeURIComponent(encodedUsername)}`);
         window.location.href = `${redirectUrl}?username=${encodeURIComponent(encodedUsername)}`;
       } else {
-        console.log(`Redirecting to default page: index.html?username=${encodeURIComponent(encodedUsername)}`);
         window.location.href = `index.html?username=${encodeURIComponent(encodedUsername)}`;
       }
     }
@@ -229,6 +208,7 @@
       document.getElementById('errorMessage').textContent = message;
       document.getElementById('codeMessage').textContent = '';
     }
+    
   </script>
 
 </body>
