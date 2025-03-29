@@ -73,6 +73,7 @@
     // Check if the user is already verified and redirect
     if (localStorage.getItem('verifiedUser')) {
       const encodedUsername = localStorage.getItem('encodedUsername');
+      console.log('Redirecting Verified User:', encodedUsername);
       redirectUser(encodedUsername);
     }
 
@@ -191,6 +192,7 @@
           localStorage.setItem('verifiedUser', username);
 
           showSuccess(result.message);
+          console.log('Redirecting to verified page...');
           redirectUser(encodedUsername);
         } else {
           showError(result.message || 'Unexpected error during code verification.');
@@ -206,10 +208,12 @@
       const urlParams = new URLSearchParams(window.location.search);
       const redirectUrl = urlParams.get('redirect');
 
-      // Prevent open redirects
-      if (redirectUrl) {
+      // Validate and prevent open redirects
+      if (redirectUrl && redirectUrl.startsWith('/') && !redirectUrl.includes('http')) {
+        console.log(`Redirecting to: ${redirectUrl}?username=${encodeURIComponent(encodedUsername)}`);
         window.location.href = `${redirectUrl}?username=${encodeURIComponent(encodedUsername)}`;
       } else {
+        console.log(`Redirecting to default page: index.html?username=${encodeURIComponent(encodedUsername)}`);
         window.location.href = `index.html?username=${encodeURIComponent(encodedUsername)}`;
       }
     }
