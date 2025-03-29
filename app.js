@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
@@ -30,15 +31,26 @@ app.use(cors({
 app.options('*', cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/images', cors(), express.static(path.join(__dirname, 'images')));
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
+// Load users from file or initialize
+let users = {};
+if (fs.existsSync(USERS_FILE)) {
+  users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+}
+
+// Save user data to file
+const saveUsers = () => {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+};
+
+// Multer storage configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const username = req.body?.username?.toLowerCase();
     if (!username) {
       return cb(new Error('Username is required'));
     }
-
     const userDir = path.join(__dirname, 'images', username);
     if (!fs.existsSync(userDir)) {
       fs.mkdirSync(userDir, { recursive: true });
@@ -52,18 +64,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 5 * 1024 * 1024 } // 5 MB limit
 });
 
-let users = {};
-if (fs.existsSync(USERS_FILE)) {
-  users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
-}
-
-const saveUsers = () => {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-};
-
+// --- LOGIN API ---
 app.post('/login', (req, res) => {
   let { username } = req.body;
   if (!username) {
@@ -71,7 +75,6 @@ app.post('/login', (req, res) => {
   }
 
   username = username.toLowerCase();
-
   if (users[username]?.verified) {
     return res.json({ message: 'You are already verified!', verified: true });
   }
@@ -81,10 +84,12 @@ app.post('/login', (req, res) => {
   saveUsers();
 
   res.json({
-    message: `Add this code to your Scratch bio: ${code}. This may take a few minutes to update.`,
+    success: true,
+    message: `Add this code to your Scratch bio: ${code}. This may take a few minutes to update.`
   });
 });
 
+// --- VERIFY API ---
 app.post('/verify', async (req, res) => {
   let { username } = req.body;
   if (!username) {
@@ -97,7 +102,7 @@ app.post('/verify', async (req, res) => {
   }
 
   if (users[username].verified) {
-    return res.json({ message: 'You are already verified!', verified: true });
+    return res.json({ success: true, message: 'You are already verified!', verified: true });
   }
 
   try {
@@ -107,7 +112,7 @@ app.post('/verify', async (req, res) => {
     if (bio.includes(users[username].code)) {
       users[username].verified = true;
       saveUsers();
-      res.json({ message: 'Verification successful', verified: true });
+      res.json({ success: true, message: 'Verification successful', verified: true });
     } else {
       res.status(400).json({ message: 'Code not found in bio' });
     }
@@ -117,6 +122,7 @@ app.post('/verify', async (req, res) => {
   }
 });
 
+// --- UPLOAD API ---
 app.post('/upload', upload.single('image'), (req, res) => {
   let { username } = req.body;
   if (!username) {
@@ -136,6 +142,7 @@ app.post('/upload', upload.single('image'), (req, res) => {
   res.json({ message: 'Image uploaded successfully', url: publicUrl });
 });
 
+// Global error handler
 app.use((err, req, res, next) => {
   if (err.message === 'Not allowed by CORS') {
     console.error('CORS error:', err.message);
@@ -144,6 +151,7 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
