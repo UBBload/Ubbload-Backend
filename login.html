@@ -139,14 +139,22 @@
     // Redirect to the specified URL or fallback to default
     function redirectUser(username) {
       const encodedUsername = encodeURIComponent(username);
+      const randomCode = generateCode();
+      const encodedWithCode = `${encodedUsername}${randomCode}`;
+
       if (redirectUrl) {
-        // Add username to redirect URL
-        const urlWithUsername = `${redirectUrl}?username=${encodedUsername}`;
+        // Add username + code to redirect URL
+        const urlWithUsername = `${redirectUrl}?username=${encodedWithCode}`;
         window.location.href = urlWithUsername;
       } else {
         // Fallback to index.html if no redirect param
-        window.location.href = `index.html?username=${encodedUsername}`;
+        window.location.href = `index.html?username=${encodedWithCode}`;
       }
+    }
+
+    // Generate random 3-digit code
+    function generateCode() {
+      return Math.floor(100 + Math.random() * 900); // Random 3-digit number
     }
 
     // Show success message
