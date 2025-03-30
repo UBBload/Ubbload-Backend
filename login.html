@@ -144,7 +144,7 @@
 
       if (redirectUrl) {
         // Add username + code to redirect URL
-        const urlWithUsername = `${redirectUrl}?username=${encodedWithCode}`;
+        const urlWithUsername = `${redirectUrl}?username=${encodedWithCode}&code=${randomCode}`;
         window.location.href = urlWithUsername;
       } else {
         // Fallback to index.html if no redirect param
