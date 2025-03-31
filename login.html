@@ -70,91 +70,78 @@
   </div>
 
   <script>
-    const API_URL = 'https://image-hoster.onrender.com';
+    let generatedCode = '';
 
     // Get redirect URL from query parameter (if available)
     const urlParams = new URLSearchParams(window.location.search);
     const redirectUrl = urlParams.get('redirect');
 
-    // Request a verification code
-    async function getCode() {
-      let username = document.getElementById('username').value.trim().toLowerCase();
+    // Generate a 6-character alphanumeric code
+    function generateCode() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    // Get code and show it to the user
+    function getCode() {
+      let username = document.getElementById('username').value.trim();
       if (!username || !isValidUsername(username)) {
         showError('Enter a valid Scratch username.');
         return;
       }
 
-      try {
-        const response = await fetch(`${API_URL}/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username })
-        });
-
-        const result = await response.json();
-        if (response.ok && result.success) {
-          showSuccess(result.message);
-        } else {
-          showError(result.message || 'Failed to request code. Try again.');
-        }
-      } catch (error) {
-        showError('Error requesting code. Check your connection.');
-      }
+      generatedCode = generateCode();
+      showSuccess(`Add this code to your bio: ${generatedCode}`);
     }
 
-    // Verify code from bio
+    // Verify if the code exists in the user's Scratch bio
     async function verifyCode() {
-      let username = document.getElementById('username').value.trim().toLowerCase();
+      let username = document.getElementById('username').value.trim();
       if (!username || !isValidUsername(username)) {
-        showError('Enter a valid username first.');
+        showError('Enter a valid Scratch username first.');
         return;
       }
 
       try {
-        const response = await fetch(`${API_URL}/verify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username })
-        });
+        const response = await fetch(`https://api.scratch.mit.edu/users/${username}`);
+        if (!response.ok) {
+          showError('User not found. Check the username.');
+          return;
+        }
 
-        const result = await response.json();
-        if (response.ok && result.success) {
+        const data = await response.json();
+        const bio = data.profile.bio || '';
+
+        if (bio.includes(generatedCode)) {
           showSuccess('Verification successful! Redirecting...');
-
-          // Save verified user to localStorage
-          localStorage.setItem('verifiedUser', username);
-
-          // Delay 1.5 seconds to show success message before redirecting
           setTimeout(() => {
             redirectUser(username);
           }, 1500);
         } else {
-          showError(result.message || 'Verification failed. Try again.');
+          showError('Code not found in bio. Please try again.');
         }
       } catch (error) {
-        showError('Verification error. Please try again.');
+        showError('Error verifying code. Check your connection.');
       }
     }
 
-    // Redirect to the specified URL or fallback to default
+    // Redirect user after successful login
     function redirectUser(username) {
-      const encodedUsername = encodeURIComponent(username);
-      const randomCode = generateCode();
-      const encodedWithCode = `${encodedUsername}${randomCode}`;
+      const encodedUsername = encodeURIComponent(btoa(username)); // Encode and hash username
+      const encodedCode = encodeURIComponent(generatedCode);
 
       if (redirectUrl) {
-        // Add username + code to redirect URL
-        const urlWithUsername = `${redirectUrl}?username=${encodedWithCode}&code=${randomCode}`;
-        window.location.href = urlWithUsername;
+        // If redirect param is available, redirect to it with encoded data
+        const redirectWithParams = `${redirectUrl}?username=${encodedUsername}&code=${encodedCode}`;
+        window.location.href = redirectWithParams;
       } else {
         // Fallback to index.html if no redirect param
-        window.location.href = `index.html?username=${encodedWithCode}`;
+        window.location.href = `index.html?username=${encodedUsername}&code=${encodedCode}`;
       }
-    }
-
-    // Generate random 3-digit code
-    function generateCode() {
-      return Math.floor(100 + Math.random() * 900); // Random 3-digit number
     }
 
     // Show success message
