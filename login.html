@@ -70,12 +70,16 @@
   </div>
 
   <script>
-    let generatedCode = '';
-
-    // Get redirect URL from query parameter (if available)
     const urlParams = new URLSearchParams(window.location.search);
     const redirectUrl = urlParams.get('redirect');
 
+    if(localStorage.getItem('verifiedUser')) {
+      redirectUser(localStorage.getItem('verifiedUser'))
+    }
+    let generatedCode = '';
+
+    // Get redirect URL from query parameter (if available)
+    
     // Generate a 6-character alphanumeric code
     function generateCode() {
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -118,6 +122,7 @@
 
         if (bio.includes(generatedCode)) {
           showSuccess('Verification successful! Redirecting...');
+          localStorage.setItem('verifiedUser', document.getElementById('username').value.trim());
           setTimeout(() => {
             redirectUser(username);
           }, 1500);
