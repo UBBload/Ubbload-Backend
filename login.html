@@ -68,6 +68,9 @@
   </div>
 
   <script>
+    const username = localStorage.getItem('verifiedUser');
+    if(username) {
+      redirectUser
     const API_URL = 'https://image-hoster.onrender.com'; // Your API endpoint
 
     async function getCode() {
