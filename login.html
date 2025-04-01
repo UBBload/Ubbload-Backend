@@ -143,12 +143,13 @@
           if (redirectUrl) {
             // If user is logged in and there's a redirect URL
             hashUsername(username).then(hashedUsername => {
-            window.location.href = `${redirectUrl}?username=${hashedUsername}&code=CODEFORENCODING`;
-           });
+              window.location.href = `${redirectUrl}?username=${hashedUsername}&code=CODEFORENCODING`;
+            });
+          } else {
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 1500);
           }
-          setTimeout(() => {
-            window.location.href = 'index.html';
-          }, 1500);
         } else {
           showError(result.message);
         }
