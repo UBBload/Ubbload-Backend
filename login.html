@@ -82,19 +82,8 @@
 
     if (username && redirectUrl) {
       // If user is logged in and there's a redirect URL
-      hashUsername(username).then(hashedUsername => {
-        window.location.href = `${redirectUrl}?username=${hashedUsername}&code=CODEFORENCODING`;
-      });
-    }
-
-    async function hashUsername(username) {
-      // Use the SubtleCrypto API to hash the username
-      const encoder = new TextEncoder();
-      const data = encoder.encode(username);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer)); // Create byte array
-      const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join(''); // Convert bytes to hex string
-      return hashHex;
+      const encodedUsername = btoa(username); // Base64 encode the username
+      window.location.href = `${redirectUrl}?username=${encodedUsername}&code=CODEFORENCODING`;
     }
 
     async function getCode() {
@@ -142,9 +131,8 @@
           localStorage.setItem('verifiedUser', username);
           if (redirectUrl) {
             // If user is logged in and there's a redirect URL
-            hashUsername(username).then(hashedUsername => {
-              window.location.href = `${redirectUrl}?username=${hashedUsername}&code=CODEFORENCODING`;
-            });
+            const encodedUsername = btoa(username); // Base64 encode the username
+            window.location.href = `${redirectUrl}?username=${encodedUsername}&code=CODEFORENCODING`;
           } else {
             setTimeout(() => {
               window.location.href = 'index.html';
