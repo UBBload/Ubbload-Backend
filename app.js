@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
@@ -16,11 +15,14 @@ const ALLOWED_ORIGINS = [
   'https://ubbload.github.io'
 ];
 
+// CORS Middleware with logging
 app.use(cors({
   origin: function (origin, callback) {
+    console.log(`🔍 CORS Request from: ${origin}`);
     if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
+      console.error(`🚫 Blocked by CORS: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -33,18 +35,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-// Load users from file or initialize
+// Load users from file
 let users = {};
 if (fs.existsSync(USERS_FILE)) {
-  users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+  try {
+    users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+  } catch (error) {
+    console.error("❌ Error loading users file:", error.message);
+  }
 }
 
-// Save user data to file
+// Save users to file
 const saveUsers = () => {
   fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
 };
 
-// Multer storage configuration
+// Multer Storage Configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const username = req.body?.username?.toLowerCase();
@@ -106,9 +112,15 @@ app.post('/verify', async (req, res) => {
   }
 
   try {
+    console.log(`🔍 Verifying Scratch user: ${username}`);
     const response = await axios.get(`https://api.scratch.mit.edu/users/${username}`);
-    const bio = response.data.profile.bio;
 
+    if (!response.data || !response.data.profile) {
+      console.error('⚠️ Invalid response from Scratch API');
+      return res.status(500).json({ message: 'Error checking profile' });
+    }
+
+    const bio = response.data.profile.bio;
     if (bio.includes(users[username].code)) {
       users[username].verified = true;
       saveUsers();
@@ -117,7 +129,7 @@ app.post('/verify', async (req, res) => {
       res.status(400).json({ message: 'Code not found in bio' });
     }
   } catch (error) {
-    console.error('Error checking profile:', error.message);
+    console.error('❌ Scratch API Error:', error.message);
     res.status(500).json({ message: 'Error checking profile' });
   }
 });
@@ -142,16 +154,16 @@ app.post('/upload', upload.single('image'), (req, res) => {
   res.json({ message: 'Image uploaded successfully', url: publicUrl });
 });
 
-// Global error handler
+// --- Global Error Handler ---
 app.use((err, req, res, next) => {
+  console.error("🔥 Error:", err.message);
   if (err.message === 'Not allowed by CORS') {
-    console.error('CORS error:', err.message);
     return res.status(403).json({ message: 'CORS not allowed for this origin' });
   }
-  next(err);
+  res.status(500).json({ message: 'Internal server error' });
 });
 
-// Start server
+// --- Start Server ---
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
