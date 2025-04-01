@@ -68,10 +68,34 @@
   </div>
 
   <script>
-    const username = localStorage.getItem('verifiedUser');
-    if(username) {
-      redirectUser
     const API_URL = 'https://image-hoster.onrender.com'; // Your API endpoint
+
+    // Function to get the 'redirect' query parameter from the URL
+    function getRedirectParam() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('redirect');
+    }
+
+    // Check if user is logged in and redirect if 'redirect' param exists
+    const username = localStorage.getItem('verifiedUser');
+    const redirectUrl = getRedirectParam();
+
+    if (username && redirectUrl) {
+      // If user is logged in and there's a redirect URL
+      hashUsername(username).then(hashedUsername => {
+        window.location.href = `${redirectUrl}?username=${hashedUsername}&code=CODEFORENCODING`;
+      });
+    }
+
+    async function hashUsername(username) {
+      // Use the SubtleCrypto API to hash the username
+      const encoder = new TextEncoder();
+      const data = encoder.encode(username);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer)); // Create byte array
+      const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join(''); // Convert bytes to hex string
+      return hashHex;
+    }
 
     async function getCode() {
       let username = document.getElementById('username').value.trim();
@@ -116,6 +140,12 @@
         if (response.ok) {
           showSuccess('Verification successful! Redirecting...');
           localStorage.setItem('verifiedUser', username);
+          if (redirectUrl) {
+            // If user is logged in and there's a redirect URL
+            hashUsername(username).then(hashedUsername => {
+            window.location.href = `${redirectUrl}?username=${hashedUsername}&code=CODEFORENCODING`;
+           });
+          }
           setTimeout(() => {
             window.location.href = 'index.html';
           }, 1500);
