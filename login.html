@@ -87,7 +87,7 @@
     }
 
     async function getCode() {
-      let username = document.getElementById('username').value.trim();
+      let username = document.getElementById('username').value;
       if (!username || !isValidUsername(username)) {
         showError('Enter a valid Scratch username.');
         return;
@@ -112,7 +112,7 @@
     }
 
     async function verifyCode() {
-      let username = document.getElementById('username').value.trim();
+      let username = document.getElementById('username').value;
       if (!username || !isValidUsername(username)) {
         showError('Enter a valid Scratch username first.');
         return;
