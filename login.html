@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
+  <title>Scratch Login</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f4f4;
       display: flex;
       align-items: center;
       justify-content: center;
       height: 100vh;
+      background: #f4f4f4;
       margin: 0;
     }
-
     .container {
       background: #fff;
       padding: 20px;
@@ -23,9 +22,7 @@
       text-align: center;
       width: 350px;
     }
-
-    input,
-    button {
+    input, button {
       width: 100%;
       padding: 10px;
       margin: 10px 0;
@@ -33,134 +30,78 @@
       border-radius: 5px;
       font-size: 16px;
     }
-
     button {
       background: #007bff;
       color: white;
       border: none;
       cursor: pointer;
     }
-
     button:hover {
       background: #0056b3;
     }
-
-    #errorMessage {
-      color: red;
-      margin-top: 10px;
-    }
-
     #codeMessage {
       color: green;
-      margin-top: 10px;
+    }
+    #errorMessage {
+      color: red;
     }
   </style>
 </head>
 <body>
-
   <div class="container">
-    <h2>Login</h2>
+    <h2>Scratch Login</h2>
     <input type="text" id="username" placeholder="Enter Scratch Username" required>
-    <button onclick="getCode()">Get Code</button>
+    <button onclick="generateCode()">Get Code</button>
     <p id="codeMessage"></p>
     <p id="errorMessage"></p>
     <button onclick="verifyCode()">Verify</button>
   </div>
 
   <script>
-    const API_URL = 'https://image-hoster.onrender.com'; // Your API endpoint
+    let generatedCode = "";
+    function generateCode() {
+      const username = document.getElementById('username').value.trim();
+      if (!username) {
+        document.getElementById('errorMessage').innerText = "Please enter a username.";
+        return;
+      }
+      generatedCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      document.getElementById('codeMessage').innerText = `Your code: ${generatedCode}`;
+      document.getElementById('errorMessage').innerText = "";
+    }
 
-    // Function to get the 'redirect' query parameter from the URL
     function getRedirectParam() {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('redirect');
     }
 
-    // Check if user is logged in and redirect if 'redirect' param exists
-    const username = localStorage.getItem('verifiedUser');
-    const redirectUrl = getRedirectParam();
-
-    if (username && redirectUrl) {
-      // If user is logged in and there's a redirect URL
-      const encodedUsername = btoa(username); // Base64 encode the username
-      window.location.href = `${redirectUrl}?username=${encodedUsername}&code=CODEFORENCODING`;
-    }
-
-    async function getCode() {
-      let username = document.getElementById('username').value;
-      if (!username || !isValidUsername(username)) {
-        showError('Enter a valid Scratch username.');
-        return;
-      }
-
-      try {
-        let response = await fetch(`${API_URL}/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username })
-        });
-
-        let result = await response.json();
-        if (response.ok) {
-          showSuccess(result.message);
-        } else {
-          showError(result.message);
-        }
-      } catch (error) {
-        showError('Error connecting to server.');
-      }
-    }
-
     async function verifyCode() {
-      let username = document.getElementById('username').value;
-      if (!username || !isValidUsername(username)) {
-        showError('Enter a valid Scratch username first.');
+      const username = document.getElementById('username').value.trim();
+      if (!username || !generatedCode) {
+        document.getElementById('errorMessage').innerText = "Please generate a code first.";
         return;
       }
-
       try {
-        let response = await fetch(`${API_URL}/verify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username })
-        });
-
-        let result = await response.json();
-        if (response.ok) {
-          showSuccess('Verification successful! Redirecting...');
+        const response = await fetch(`https://api.scratch.mit.edu/users/${username}`);
+        if (!response.ok) {
+          throw new Error("User not found.");
+        }
+        const data = await response.json();
+        if (data.profile && data.profile.bio && data.profile.bio.includes(generatedCode)) {
+          document.getElementById('codeMessage').innerText = "Verification successful! Redirecting...";
+          document.getElementById('errorMessage').innerText = "";
           localStorage.setItem('verifiedUser', username);
+          const redirectUrl = getRedirectParam();
           if (redirectUrl) {
-            // If user is logged in and there's a redirect URL
-            const encodedUsername = btoa(username); // Base64 encode the username
-            window.location.href = `${redirectUrl}?username=${encodedUsername}&code=CODEFORENCODING`;
-          } else {
-            setTimeout(() => {
-              window.location.href = 'index.html';
-            }, 1500);
+            window.location.href = `${redirectUrl}?username=${encodeURIComponent(username)}`;
           }
         } else {
-          showError(result.message);
+          document.getElementById('errorMessage').innerText = "Code not found in bio. Make sure you've added it.";
         }
       } catch (error) {
-        showError('Error verifying code.');
+        document.getElementById('errorMessage').innerText = "Error verifying user. Make sure the username is correct.";
       }
     }
-
-    function showSuccess(message) {
-      document.getElementById('codeMessage').textContent = message;
-      document.getElementById('errorMessage').textContent = '';
-    }
-
-    function showError(message) {
-      document.getElementById('errorMessage').textContent = message;
-      document.getElementById('codeMessage').textContent = '';
-    }
-
-    function isValidUsername(username) {
-      const regex = /^[a-zA-Z0-9_-]{3,20}$/;
-      return regex.test(username);
-    }
   </script>
-
 </body>
 </html>
