@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Scratch Login</title>
   <style>
     body {
@@ -50,7 +50,7 @@
 <body>
   <div class="container">
     <h2>Scratch Login</h2>
-    <input type="text" id="username" placeholder="Enter Scratch Username" required>
+    <input type="text" id="username" placeholder="Enter Scratch Username" />
     <button onclick="generateCode()">Get Code</button>
     <p id="codeMessage"></p>
     <p id="errorMessage"></p>
@@ -58,48 +58,46 @@
   </div>
 
   <script>
-    let generatedCode = "";
-    function generateCode() {
+    async function generateCode() {
       const username = document.getElementById('username').value.trim();
       if (!username) {
-        document.getElementById('errorMessage').innerText = "Please enter a username.";
+        document.getElementById('errorMessage').innerText = "Enter your username.";
         return;
       }
-      generatedCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      document.getElementById('codeMessage').innerText = `Your code: ${generatedCode}`;
-      document.getElementById('errorMessage').innerText = "";
-    }
-
-    function getRedirectParam() {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('redirect');
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('codeMessage').innerText = data.message;
+        document.getElementById('errorMessage').innerText = '';
+      } else {
+        document.getElementById('errorMessage').innerText = data.message;
+        document.getElementById('codeMessage').innerText = '';
+      }
     }
 
     async function verifyCode() {
       const username = document.getElementById('username').value.trim();
-      if (!username || !generatedCode) {
-        document.getElementById('errorMessage').innerText = "Please generate a code first.";
+      if (!username) {
+        document.getElementById('errorMessage').innerText = "Enter your username.";
         return;
       }
-      try {
-        const response = await fetch(`https://api.scratch.mit.edu/users/${username}`);
-        if (!response.ok) {
-          throw new Error("User not found.");
-        }
-        const data = await response.json();
-        if (data.profile && data.profile.bio && data.profile.bio.includes(generatedCode)) {
-          document.getElementById('codeMessage').innerText = "Verification successful! Redirecting...";
-          document.getElementById('errorMessage').innerText = "";
-          localStorage.setItem('verifiedUser', username);
-          const redirectUrl = getRedirectParam();
-          if (redirectUrl) {
-            window.location.href = `${redirectUrl}?username=${encodeURIComponent(username)}`;
-          }
-        } else {
-          document.getElementById('errorMessage').innerText = "Code not found in bio. Make sure you've added it.";
-        }
-      } catch (error) {
-        document.getElementById('errorMessage').innerText = "Error verifying user. Make sure the username is correct.";
+      const res = await fetch('/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username })
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('codeMessage').innerText = data.message;
+        document.getElementById('errorMessage').innerText = '';
+        localStorage.setItem('verifiedUser', username);
+      } else {
+        document.getElementById('errorMessage').innerText = data.message;
+        document.getElementById('codeMessage').innerText = '';
       }
     }
   </script>
