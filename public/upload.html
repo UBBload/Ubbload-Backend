@@ -121,7 +121,7 @@
       reader.readAsDataURL(file);
 
       try {
-        const response = await fetch(`${serverUrl}/upload`, {
+        const response = await fetch(`/upload`, {
           method: 'POST',
           body: formData
         });
