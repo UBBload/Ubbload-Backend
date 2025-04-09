@@ -58,6 +58,12 @@
   </div>
 
   <script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirectUrl = urlParams.get('redirect');
+
+  if (redirectUrl) {
+    localStorage.setItem('redirectUrl', redirectUrl);
+  }
     async function generateCode() {
       const username = document.getElementById('username').value.trim();
       if (!username) {
@@ -95,11 +101,16 @@
         document.getElementById('codeMessage').innerText = data.message;
         document.getElementById('errorMessage').innerText = '';
         localStorage.setItem('verifiedUser', username);
+        if (redirectUrl) {
+          window.location.href = `${redirectUrl}?username=${btoa(username)}`
+        } else {
+          window.location.href = 'index.html'
       } else {
         document.getElementById('errorMessage').innerText = data.message;
         document.getElementById('codeMessage').innerText = '';
       }
     }
+    
   </script>
 </body>
 </html>
